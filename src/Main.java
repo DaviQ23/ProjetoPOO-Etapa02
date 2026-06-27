@@ -16,6 +16,9 @@ public class Main {
     static Pagamento[] pagamentos = new Pagamento[200];
     static int totalPagamentos = 0;
 
+    // prontuarios — um pra cada paciente (por indice igual ao do paciente)
+    static Prontuario[] prontuarios = new Prontuario[100];
+
     static double[] multas = new double[100];
     static int totalMultas = 0;
 
@@ -31,6 +34,7 @@ public class Main {
             System.out.println("4 - Atendimentos");
             System.out.println("5 - Pagamentos");
             System.out.println("6 - Relatorios");
+            System.out.println("7 - Prontuarios");
             System.out.println("0 - Sair");
             System.out.print("Escolha: ");
             opcao = Integer.parseInt(sc.nextLine());
@@ -42,6 +46,7 @@ public class Main {
                 case 4: menuAtendimentos(); break;
                 case 5: menuPagamentos(); break;
                 case 6: menuRelatorios(); break;
+                case 7: menuProntuarios(); break;
                 case 0: break;
                 default: System.out.println("Opcao invalida!"); break;
             }
@@ -91,14 +96,16 @@ public class Main {
         System.out.print("Tipo (1-Minimo / 2-Com idade e tel / 3-Completo): ");
         int tipo = Integer.parseInt(sc.nextLine());
 
+        int idx = totalPacientes;
+
         if (tipo == 1) {
-            pacientes[totalPacientes] = new Paciente(nome, cpf);
+            pacientes[idx] = new Paciente(nome, cpf);
         } else if (tipo == 2) {
             System.out.print("Idade: ");
             int idade = Integer.parseInt(sc.nextLine());
             System.out.print("Telefone: ");
             String tel = sc.nextLine();
-            pacientes[totalPacientes] = new Paciente(nome, cpf, idade, tel);
+            pacientes[idx] = new Paciente(nome, cpf, idade, tel);
         } else {
             System.out.print("Idade: ");
             int idade = Integer.parseInt(sc.nextLine());
@@ -106,8 +113,12 @@ public class Main {
             String tel = sc.nextLine();
             System.out.print("Convenio: ");
             String conv = sc.nextLine();
-            pacientes[totalPacientes] = new Paciente(nome, cpf, idade, tel, conv);
+            pacientes[idx] = new Paciente(nome, cpf, idade, tel, conv);
         }
+
+        // cria o prontuario automaticamente quando cadastra o paciente
+        prontuarios[idx] = new Prontuario(cpf);
+
         totalPacientes++;
         System.out.println("Paciente cadastrado com sucesso!");
     }
@@ -307,6 +318,8 @@ public class Main {
     }
 
     // ---- CONSULTAS ----
+    // aqui foi onde mais mudou: antes passava cpf e nome, agora passa os objetos direto
+    // isso e a associacao que o prof pediu na etapa 7
 
     public static void menuConsultas() {
         int op = -1;
@@ -393,12 +406,13 @@ public class Main {
         System.out.print("Informar tipo? (1-Nao / 2-Sim): ");
         int infoTipo = Integer.parseInt(sc.nextLine());
 
+        // aqui e o ponto chave da refatoracao: passa os objetos e nao mais strings
         if (infoTipo == 1) {
-            consultas[totalConsultas] = new Consulta(cpf, nomeProf, data, horario);
+            consultas[totalConsultas] = new Consulta(pacientes[idxPac], profissionais[idxProf], data, horario);
         } else {
             System.out.print("Tipo (inicial/retorno/avaliacao): ");
             String tipo = sc.nextLine();
-            consultas[totalConsultas] = new Consulta(cpf, nomeProf, data, horario, tipo);
+            consultas[totalConsultas] = new Consulta(pacientes[idxPac], profissionais[idxProf], data, horario, tipo);
         }
         totalConsultas++;
         System.out.println("Consulta agendada com sucesso!");
@@ -443,7 +457,8 @@ public class Main {
             return;
         }
 
-        consultas[totalConsultas] = new Consulta(cpf, profissionais[idxProf].nome, data, horario);
+        // mesmo aqui: objetos direto no construtor
+        consultas[totalConsultas] = new Consulta(pacientes[idxPac], profissionais[idxProf], data, horario);
         totalConsultas++;
         System.out.println("Consulta agendada com " + profissionais[idxProf].nome + "!");
     }
@@ -459,7 +474,8 @@ public class Main {
         // localiza a consulta
         int idx = -1;
         for (int i = 0; i < totalConsultas; i++) {
-            if (consultas[i].cpfPaciente.equals(cpf) && consultas[i].data.equals(data)
+            // agora usa getCpfPaciente() que vem do objeto associado
+            if (consultas[i].getCpfPaciente().equals(cpf) && consultas[i].data.equals(data)
                     && consultas[i].horario.equals(horario)) {
                 idx = i;
                 break;
@@ -517,7 +533,7 @@ public class Main {
 
         int idx = -1;
         for (int i = 0; i < totalConsultas; i++) {
-            if (consultas[i].cpfPaciente.equals(cpf) && consultas[i].data.equals(dataOrig)
+            if (consultas[i].getCpfPaciente().equals(cpf) && consultas[i].data.equals(dataOrig)
                     && consultas[i].horario.equals(horarioOrig)
                     && consultas[i].status.equals("agendada")) {
                 idx = i;
@@ -547,25 +563,26 @@ public class Main {
             novoHorario = sc.nextLine();
         }
 
-        String nomeProf = consultas[idx].nomeProfissional;
-        int idxProf = buscarIndiceProfissional(nomeProf);
+        // pega os objetos diretamente da consulta original — associacao funcionando
+        Profissional prof = consultas[idx].profissional;
+        Paciente pac = consultas[idx].paciente;
 
         // se mudou de dia, verifica se prof atende
         if (tipo == 2) {
             String dia = descobrirDiaSemana(novaData);
-            if (!profissionais[idxProf].atendeNoDia(dia)) {
+            if (!prof.atendeNoDia(dia)) {
                 System.out.println("Profissional nao atende nesse dia.");
                 return;
             }
         }
 
-        if (temConflito(nomeProf, novaData, novoHorario)) {
+        if (temConflito(prof.nome, novaData, novoHorario)) {
             System.out.println("Horario ocupado. Nao foi possivel remarcar.");
             return;
         }
 
         consultas[idx].remarcar();
-        consultas[totalConsultas] = new Consulta(cpf, nomeProf, novaData, novoHorario, consultas[idx].tipo);
+        consultas[totalConsultas] = new Consulta(pac, prof, novaData, novoHorario, consultas[idx].tipo);
         totalConsultas++;
         System.out.println("Consulta remarcada com sucesso!");
     }
@@ -585,7 +602,7 @@ public class Main {
         String cpf = sc.nextLine();
         boolean achou = false;
         for (int i = 0; i < totalConsultas; i++) {
-            if (consultas[i].cpfPaciente.equals(cpf)) {
+            if (consultas[i].getCpfPaciente().equals(cpf)) {
                 System.out.println("[" + i + "] " + consultas[i].exibirResumo());
                 achou = true;
             }
@@ -596,7 +613,7 @@ public class Main {
     // verifica se ja tem consulta nesse horario com esse profissional
     public static boolean temConflito(String nomeProf, String data, String horario) {
         for (int i = 0; i < totalConsultas; i++) {
-            if (consultas[i].nomeProfissional.equals(nomeProf)
+            if (consultas[i].getNomeProfissional().equals(nomeProf)
                     && consultas[i].data.equals(data)
                     && consultas[i].horario.equals(horario)
                     && consultas[i].status.equals("agendada")) {
@@ -682,13 +699,15 @@ public class Main {
         System.out.print("Tipo de registro (1-So obs / 2-Com diagnostico / 3-Completo): ");
         int tipo = Integer.parseInt(sc.nextLine());
 
+        Atendimento novoAtendimento;
+
         if (tipo == 1) {
-            atendimentos[totalAtendimentos] = new Atendimento(idxConsulta, obs);
+            novoAtendimento = new Atendimento(idxConsulta, obs);
 
         } else if (tipo == 2) {
             System.out.print("Diagnostico: ");
             String diag = sc.nextLine();
-            atendimentos[totalAtendimentos] = new Atendimento(idxConsulta, obs, diag);
+            novoAtendimento = new Atendimento(idxConsulta, obs, diag);
 
         } else {
             System.out.print("Diagnostico: ");
@@ -719,7 +738,16 @@ public class Main {
                     procs[i] = sc.nextLine();
                 }
             }
-            atendimentos[totalAtendimentos] = new Atendimento(idxConsulta, obs, diag, procs, qtdProcs);
+            novoAtendimento = new Atendimento(idxConsulta, obs, diag, procs, qtdProcs);
+        }
+
+        atendimentos[totalAtendimentos] = novoAtendimento;
+
+        // registra no prontuario do paciente tambem
+        // pega o indice do paciente pelo cpf, que vem do objeto associado na consulta
+        int idxPac = buscarIndicePaciente(consultas[idxConsulta].getCpfPaciente());
+        if (idxPac != -1 && prontuarios[idxPac] != null) {
+            prontuarios[idxPac].adicionarAtendimento(novoAtendimento);
         }
 
         consultas[idxConsulta].realizar();
@@ -792,16 +820,15 @@ public class Main {
             return;
         }
 
-        // obtem valor do profissional
-        String nomeProf = consultas[idxConsulta].nomeProfissional;
-        int idxProf = buscarIndiceProfissional(nomeProf);
-        double valorBase = profissionais[idxProf].valorConsulta;
+        // agora pega o profissional direto do objeto associado — sem precisar buscar por nome
+        Profissional prof = consultas[idxConsulta].profissional;
+        double valorBase = prof.valorConsulta;
+
+        // mesmo pro paciente
+        Paciente pac = consultas[idxConsulta].paciente;
 
         // verifica convenio e tipo
-        String cpfPac = consultas[idxConsulta].cpfPaciente;
-        int idxPac = buscarIndicePaciente(cpfPac);
-
-        boolean temConvenio = !pacientes[idxPac].convenioNome.equals("");
+        boolean temConvenio = !pac.convenioNome.equals("");
         boolean ehRetorno = consultas[idxConsulta].tipo.equals("retorno");
 
         double desconto = 0;
@@ -858,6 +885,60 @@ public class Main {
         }
     }
 
+    // ---- PRONTUARIOS ----
+
+    public static void menuProntuarios() {
+        int op = -1;
+        while (op != 0) {
+            System.out.println("\n--- PRONTUARIOS ---");
+            System.out.println("1 - Exibir prontuario por CPF");
+            System.out.println("2 - Atualizar observacoes gerais");
+            System.out.println("0 - Voltar");
+            System.out.print("Opcao: ");
+            op = Integer.parseInt(sc.nextLine());
+
+            switch (op) {
+                case 1: exibirProntuario(); break;
+                case 2: atualizarObservacoesProntuario(); break;
+                case 0: break;
+                default: System.out.println("Opcao invalida!"); break;
+            }
+        }
+    }
+
+    public static void exibirProntuario() {
+        System.out.print("CPF do paciente: ");
+        String cpf = sc.nextLine();
+        int idx = buscarIndicePaciente(cpf);
+        if (idx == -1) {
+            System.out.println("Paciente nao encontrado.");
+            return;
+        }
+        if (prontuarios[idx] == null) {
+            System.out.println("Prontuario nao encontrado para esse paciente.");
+            return;
+        }
+        System.out.println(prontuarios[idx].exibirResumo());
+    }
+
+    public static void atualizarObservacoesProntuario() {
+        System.out.print("CPF do paciente: ");
+        String cpf = sc.nextLine();
+        int idx = buscarIndicePaciente(cpf);
+        if (idx == -1) {
+            System.out.println("Paciente nao encontrado.");
+            return;
+        }
+        if (prontuarios[idx] == null) {
+            System.out.println("Prontuario nao encontrado.");
+            return;
+        }
+        System.out.print("Novas observacoes gerais: ");
+        String obs = sc.nextLine();
+        prontuarios[idx].atualizarObservacoes(obs);
+        System.out.println("Observacoes atualizadas!");
+    }
+
     // ---- RELATORIOS ----
 
     public static void menuRelatorios() {
@@ -868,6 +949,7 @@ public class Main {
             System.out.println("2 - Por profissional");
             System.out.println("3 - Por periodo");
             System.out.println("4 - Resumo financeiro");
+            System.out.println("5 - Exportar consultas (CSV)");
             System.out.println("0 - Voltar");
             System.out.print("Opcao: ");
             op = Integer.parseInt(sc.nextLine());
@@ -890,6 +972,14 @@ public class Main {
                     break;
                 case 4:
                     Relatorio.gerarResumoFinanceiro(consultas, totalConsultas, pagamentos, totalPagamentos, multas, totalMultas);
+                    break;
+                case 5:
+                    // aproveita o exportarCsv() que vem da interface Exportavel
+                    System.out.println("\n=== CSV - CONSULTAS ===");
+                    System.out.println("cpf,nomePaciente,nomeProfissional,especialidade,data,horario,tipo,status");
+                    for (int i = 0; i < totalConsultas; i++) {
+                        System.out.println(consultas[i].exportarCsv());
+                    }
                     break;
                 case 0: break;
                 default: System.out.println("Opcao invalida!"); break;

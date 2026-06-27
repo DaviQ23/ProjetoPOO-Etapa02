@@ -22,7 +22,8 @@ public class Relatorio {
         System.out.println("\n=== RELATORIO - " + nomeProfissional + " ===");
         boolean achou = false;
         for (int i = 0; i < totalConsultas; i++) {
-            if (consultas[i].nomeProfissional.equals(nomeProfissional)) {
+            // agora usa getNomeProfissional() que vem do objeto associado
+            if (consultas[i].getNomeProfissional().equals(nomeProfissional)) {
                 System.out.println(consultas[i].exibirResumo());
                 String diag = buscarDiagnostico(i, atendimentos, totalAtendimentos);
                 if (!diag.equals("")) {

@@ -5,8 +5,6 @@ public class Profissional {
     public double valorConsulta;
     public String[] diasDisponiveis;
     public int totalDias;
-
-    // so nome e especialidade
     public Profissional(String nome, String especialidade) {
         this.nome = nome;
         this.especialidade = especialidade;
@@ -15,7 +13,6 @@ public class Profissional {
         this.diasDisponiveis = new String[7];
         this.totalDias = 0;
     }
-
     public Profissional(String nome, String especialidade, String registroProfissional, double valorConsulta) {
         this.nome = nome;
         this.especialidade = especialidade;
@@ -24,8 +21,6 @@ public class Profissional {
         this.diasDisponiveis = new String[7];
         this.totalDias = 0;
     }
-
-    // construtor completo com dias
     public Profissional(String nome, String especialidade, String registroProfissional,
                         double valorConsulta, String[] dias, int totalDias) {
         this.nome = nome;
@@ -38,12 +33,10 @@ public class Profissional {
             this.diasDisponiveis[i] = dias[i];
         }
     }
-
     public void atualizar(String registro, double valor) {
         this.registroProfissional = registro;
         this.valorConsulta = valor;
     }
-
     public void atualizar(String registro, double valor, String[] dias, int totalDias) {
         this.registroProfissional = registro;
         this.valorConsulta = valor;
@@ -52,18 +45,12 @@ public class Profissional {
             this.diasDisponiveis[i] = dias[i];
         }
     }
-
-    // verifica se o profissional atende naquele dia
     public boolean atendeNoDia(String dia) {
         for (int i = 0; i < totalDias; i++) {
-            if (diasDisponiveis[i].equals(dia)) {
-                return true;
-            }
+            if (diasDisponiveis[i].equals(dia)) return true;
         }
         return false;
     }
-
-    // valida as especialidades aceitas pela clinica
     public static boolean especialidadeValida(String esp) {
         if (esp.equals("clinica geral")) return true;
         if (esp.equals("fisioterapia")) return true;
@@ -71,7 +58,6 @@ public class Profissional {
         if (esp.equals("nutricao")) return true;
         return false;
     }
-
     public String exibirResumo() {
         String dias = "";
         for (int i = 0; i < totalDias; i++) {
