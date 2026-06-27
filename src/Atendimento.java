@@ -1,58 +1,92 @@
-public class Atendimento {
-    public int indiceConsulta;
-    public String observacoes;
-    public String diagnostico;
-    public String[] procedimentos;
-    public int totalProcedimentos;
-    public Atendimento(int indiceConsulta, String observacoes) {
+// COMPOSIÇÃO: Atendimento contém um Prontuario.
+// O Prontuario é criado exclusivamente dentro do Atendimento (construtor package-private),
+// e não existe sem ele. Se o Atendimento for removido, o Prontuario também é.
+public class Atendimento implements Exportavel {
+
+    private int indiceConsulta;
+    private Prontuario prontuario; // COMPOSIÇÃO com Prontuario
+    private boolean concluido;
+
+    // Registro básico — só observações e data
+    // SOBRECARGA: mesmo nome de construtor, parâmetros diferentes (resolvido em tempo de compilação)
+    public Atendimento(int indiceConsulta, String observacoes, String dataRegistro) {
         this.indiceConsulta = indiceConsulta;
-        this.observacoes = observacoes;
-        this.diagnostico = "";
-        this.procedimentos = new String[10];
-        this.totalProcedimentos = 0;
+        this.prontuario = new Prontuario(observacoes, dataRegistro); // cria o Prontuario internamente
+        this.concluido = false;
     }
-    public Atendimento(int indiceConsulta, String observacoes, String diagnostico) {
+
+    // Registro com diagnóstico já definido
+    // SOBRECARGA: mesmo nome de construtor, parâmetros diferentes (resolvido em tempo de compilação)
+    public Atendimento(int indiceConsulta, String observacoes, String diagnostico, String dataRegistro) {
         this.indiceConsulta = indiceConsulta;
-        this.observacoes = observacoes;
-        this.diagnostico = diagnostico;
-        this.procedimentos = new String[10];
-        this.totalProcedimentos = 0;
+        this.prontuario = new Prontuario(observacoes, diagnostico, dataRegistro);
+        this.concluido = false;
     }
-    public Atendimento(int indiceConsulta, String observacoes, String diagnostico,
-                       String[] procedimentos, int totalProcedimentos) {
-        this.indiceConsulta = indiceConsulta;
-        this.observacoes = observacoes;
-        this.diagnostico = diagnostico;
-        this.procedimentos = new String[10];
-        this.totalProcedimentos = totalProcedimentos;
-        for (int i = 0; i < totalProcedimentos; i++) {
-            this.procedimentos[i] = procedimentos[i];
-        }
+
+    // Getters — encapsulamento (R1): atributos privados, acesso apenas por métodos
+    public int getIndiceConsulta() {
+        return indiceConsulta;
     }
+
+    public boolean isConcluido() {
+        return concluido;
+    }
+
+    // Expõe o prontuario para leitura (mas o objeto em si só é criado aqui dentro)
+    public Prontuario getProntuario() {
+        return prontuario;
+    }
+
+    // Métodos que delegam ao Prontuario — mantém a interface familiar para quem usava Atendimento antes
+
+    public String getObservacoes() {
+        return prontuario.getObservacoes();
+    }
+
+    public void setObservacoes(String observacoes) {
+        prontuario.setObservacoes(observacoes);
+    }
+
+    public String getDiagnostico() {
+        return prontuario.getDiagnostico();
+    }
+
+    public void setDiagnostico(String diagnostico) {
+        prontuario.setDiagnostico(diagnostico);
+    }
+
+    // Adiciona um procedimento por vez
+    // SOBRECARGA: mesmo nome, parâmetros diferentes (resolvido em tempo de compilação)
     public void adicionarProcedimento(String procedimento) {
-        if (totalProcedimentos < 10) {
-            procedimentos[totalProcedimentos] = procedimento;
-            totalProcedimentos++;
-        }
+        prontuario.adicionarProcedimento(procedimento);
     }
-    public void adicionarProcedimento(String[] procs, int quantidade) {
-        for (int i = 0; i < quantidade; i++) {
-            if (totalProcedimentos < 10) {
-                procedimentos[totalProcedimentos] = procs[i];
-                totalProcedimentos++;
-            }
-        }
+
+    // Adiciona vários procedimentos de uma lista
+    // SOBRECARGA: mesmo nome, parâmetros diferentes (resolvido em tempo de compilação)
+    public void adicionarProcedimento(java.util.List<String> lista) {
+        prontuario.adicionarProcedimento(lista);
     }
+
+    public void concluir() {
+        this.concluido = true;
+    }
+
     public String exibirResumo() {
-        String resumo = "Observacoes: " + observacoes;
-        if (!diagnostico.equals("")) resumo = resumo + "\nDiagnostico: " + diagnostico;
-        if (totalProcedimentos > 0) {
-            resumo = resumo + "\nProcedimentos: ";
-            for (int i = 0; i < totalProcedimentos; i++) {
-                resumo = resumo + procedimentos[i];
-                if (i < totalProcedimentos - 1) resumo = resumo + ", ";
-            }
-        }
-        return resumo;
+        String status = concluido ? "Concluido" : "Em andamento";
+        return "Atendimento #" + indiceConsulta + " | Status: " + status
+                + "\n" + prontuario.exibirResumo();
+    }
+
+    // SOBRESCRITA: implementação do contrato da interface Exportavel
+    // LIGAÇÃO DINÂMICA: o método executado depende do tipo real do objeto em tempo de execução
+    @Override
+    public String exportarDados() {
+        return "ATENDIMENTO;"
+                + indiceConsulta + ";"
+                + prontuario.getDataRegistro() + ";"
+                + prontuario.getObservacoes() + ";"
+                + prontuario.getDiagnostico() + ";"
+                + prontuario.getProcedimentos().toString() + ";"
+                + (concluido ? "concluido" : "em_andamento");
     }
 }
