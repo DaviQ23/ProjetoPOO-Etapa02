@@ -69,7 +69,8 @@ public class Relatorio {
         }
 
         for (int i = 0; i < totalPagamentos; i++) {
-            totalFaturado = totalFaturado + pagamentos[i].valorFinal;
+            // LIGAÇÃO DINÂMICA: modificado para invocar corretamente o método calcularValorFinal() polimórfico das subclasses de Pagamento
+            totalFaturado = totalFaturado + pagamentos[i].calcularValorFinal();
         }
 
         for (int i = 0; i < totalMultas; i++) {
@@ -86,8 +87,8 @@ public class Relatorio {
     // busca diagnostico de um atendimento pelo indice da consulta
     public static String buscarDiagnostico(int indiceConsulta, Atendimento[] atendimentos, int total) {
         for (int i = 0; i < total; i++) {
-            if (atendimentos[i].indiceConsulta == indiceConsulta) {
-                return atendimentos[i].diagnostico;
+            if (atendimentos[i].getIndiceConsulta() == indiceConsulta) {
+                return atendimentos[i].getDiagnostico();
             }
         }
         return "";
