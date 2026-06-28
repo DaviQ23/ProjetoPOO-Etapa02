@@ -1,4 +1,6 @@
 public class Paciente extends Pessoa {
+    private static final String SEM_CONVENIO = "";
+
     private int idade;
     private String convenioNome;
     private boolean ativo;
@@ -6,7 +8,7 @@ public class Paciente extends Pessoa {
     public Paciente(String nome, String cpf) {
         super(nome, cpf);
         this.idade = 0;
-        this.convenioNome = "";
+        this.convenioNome = SEM_CONVENIO;
         this.ativo = true;
     }
 
@@ -14,7 +16,7 @@ public class Paciente extends Pessoa {
         super(nome, cpf);
         setIdade(idade);
         setTelefone(telefone);
-        this.convenioNome = "";
+        this.convenioNome = SEM_CONVENIO;
         this.ativo = true;
     }
 
@@ -63,6 +65,10 @@ public class Paciente extends Pessoa {
         return ativo;
     }
 
+    public boolean temConvenio() {
+        return convenioNome != null && !convenioNome.trim().isEmpty();
+    }
+
     public int getIdade() {
         return idade;
     }
@@ -79,28 +85,26 @@ public class Paciente extends Pessoa {
     }
 
     public void setConvenioNome(String convenioNome) {
-        if (convenioNome == null) {
-            this.convenioNome = "";
+        if (convenioNome == null || convenioNome.trim().isEmpty()) {
+            this.convenioNome = SEM_CONVENIO;
         } else {
-            this.convenioNome = convenioNome;
+            this.convenioNome = convenioNome.trim();
         }
+    }
+
+    private String obterStatusTexto() {
+        return ativo ? "Sim" : "Nao";
     }
 
     // SOBRESCRITA: Paciente redefine o comportamento abstrato herdado de Pessoa.
     @Override
     public String exibirResumo() {
-        String status = "Sim";
-
-        if (!ativo) {
-            status = "Nao";
-        }
-
         return "Nome: " + nome
                 + " | CPF: " + cpf
                 + " | Idade: " + idade
                 + " | Tel: " + telefone
                 + " | Data nasc.: " + dataNascimento
                 + " | Convenio: " + convenioNome
-                + " | Ativo: " + status;
+                + " | Ativo: " + obterStatusTexto();
     }
 }
