@@ -1,4 +1,9 @@
 public class Profissional extends Pessoa {
+    private static final String CPF_NAO_INFORMADO_PREFIXO = "CPF-NAO-INFORMADO-";
+    private static final String SEM_REGISTRO = "";
+    private static final int LIMITE_DIAS_DISPONIVEIS = 7;
+    private static final double VALOR_PADRAO_CONSULTA = 0.0;
+
     private String especialidade;
     private String registroProfissional;
     private double valorConsulta;
@@ -6,74 +11,78 @@ public class Profissional extends Pessoa {
     private int totalDias;
 
     public Profissional(String nome, String especialidade) {
-        super(nome, "CPF-NAO-INFORMADO-" + nome);
+        super(nome, gerarCpfProvisorio(nome));
         setEspecialidade(especialidade);
-        this.registroProfissional = "";
-        this.valorConsulta = 0;
-        this.diasDisponiveis = new String[7];
-        this.totalDias = 0;
+        this.registroProfissional = SEM_REGISTRO;
+        this.valorConsulta = VALOR_PADRAO_CONSULTA;
+        inicializarDiasDisponiveis();
     }
 
     public Profissional(String nome, String especialidade, String registroProfissional, double valorConsulta) {
-        super(nome, "CPF-NAO-INFORMADO-" + nome);
+        super(nome, gerarCpfProvisorio(nome));
         setEspecialidade(especialidade);
-        this.registroProfissional = registroProfissional;
+        setRegistroProfissional(registroProfissional);
         setValorConsulta(valorConsulta);
-        this.diasDisponiveis = new String[7];
-        this.totalDias = 0;
+        inicializarDiasDisponiveis();
     }
 
     public Profissional(String nome, String especialidade, String registroProfissional,
                         double valorConsulta, String[] dias, int totalDias) {
-        super(nome, "CPF-NAO-INFORMADO-" + nome);
+        super(nome, gerarCpfProvisorio(nome));
         setEspecialidade(especialidade);
-        this.registroProfissional = registroProfissional;
+        setRegistroProfissional(registroProfissional);
         setValorConsulta(valorConsulta);
-        this.diasDisponiveis = new String[7];
-        this.totalDias = 0;
-
-        for (int i = 0; i < totalDias && i < this.diasDisponiveis.length; i++) {
-            this.diasDisponiveis[i] = dias[i];
-            this.totalDias++;
-        }
+        inicializarDiasDisponiveis();
+        adicionarDias(dias, totalDias);
     }
 
     public void atualizar(String registro, double valor) {
-        this.registroProfissional = registro;
+        setRegistroProfissional(registro);
         setValorConsulta(valor);
     }
 
     public void atualizar(String registro, double valor, String[] dias, int totalDias) {
-        this.registroProfissional = registro;
+        setRegistroProfissional(registro);
         setValorConsulta(valor);
-        this.totalDias = 0;
-
-        for (int i = 0; i < totalDias && i < this.diasDisponiveis.length; i++) {
-            this.diasDisponiveis[i] = dias[i];
-            this.totalDias++;
-        }
+        inicializarDiasDisponiveis();
+        adicionarDias(dias, totalDias);
     }
 
     public boolean atendeNoDia(String dia) {
+        if (dia == null || dia.trim().isEmpty()) {
+            return false;
+        }
+
         for (int i = 0; i < totalDias; i++) {
-            if (diasDisponiveis[i] != null && diasDisponiveis[i].equalsIgnoreCase(dia)) {
+            if (diasDisponiveis[i] != null && diasDisponiveis[i].equalsIgnoreCase(dia.trim())) {
                 return true;
             }
         }
+
         return false;
     }
 
     public static boolean especialidadeValida(String esp) {
-        if (esp == null) {
+        if (esp == null || esp.trim().isEmpty()) {
             return false;
         }
 
-        if (esp.equalsIgnoreCase("clinica geral")) return true;
-        if (esp.equalsIgnoreCase("fisioterapia")) return true;
-        if (esp.equalsIgnoreCase("psicologia")) return true;
-        if (esp.equalsIgnoreCase("nutricao")) return true;
+        String especialidadeNormalizada = esp.trim();
+
+        if (especialidadeNormalizada.equalsIgnoreCase("clinica geral")) return true;
+        if (especialidadeNormalizada.equalsIgnoreCase("fisioterapia")) return true;
+        if (especialidadeNormalizada.equalsIgnoreCase("psicologia")) return true;
+        if (especialidadeNormalizada.equalsIgnoreCase("nutricao")) return true;
 
         return false;
+    }
+
+    public boolean possuiCadastroCompleto() {
+        return possuiRegistro() && valorConsulta > 0 && totalDias > 0;
+    }
+
+    public boolean possuiRegistro() {
+        return registroProfissional != null && !registroProfissional.trim().isEmpty();
     }
 
     public String getEspecialidade() {
@@ -85,7 +94,7 @@ public class Profissional extends Pessoa {
             throw new IllegalArgumentException("Especialidade nao pode ser vazia.");
         }
 
-        this.especialidade = especialidade;
+        this.especialidade = especialidade.trim();
     }
 
     public String getRegistroProfissional() {
@@ -93,10 +102,10 @@ public class Profissional extends Pessoa {
     }
 
     public void setRegistroProfissional(String registroProfissional) {
-        if (registroProfissional == null) {
-            this.registroProfissional = "";
+        if (registroProfissional == null || registroProfissional.trim().isEmpty()) {
+            this.registroProfissional = SEM_REGISTRO;
         } else {
-            this.registroProfissional = registroProfissional;
+            this.registroProfissional = registroProfissional.trim();
         }
     }
 
@@ -134,6 +143,32 @@ public class Profissional extends Pessoa {
         return copia;
     }
 
+    private void inicializarDiasDisponiveis() {
+        this.diasDisponiveis = new String[LIMITE_DIAS_DISPONIVEIS];
+        this.totalDias = 0;
+    }
+
+    private void adicionarDias(String[] dias, int totalDias) {
+        if (dias == null || totalDias <= 0) {
+            return;
+        }
+
+        for (int i = 0; i < totalDias && i < this.diasDisponiveis.length; i++) {
+            if (dias[i] != null && !dias[i].trim().isEmpty()) {
+                this.diasDisponiveis[this.totalDias] = dias[i].trim();
+                this.totalDias++;
+            }
+        }
+    }
+
+    private static String gerarCpfProvisorio(String nome) {
+        if (nome == null || nome.trim().isEmpty()) {
+            return CPF_NAO_INFORMADO_PREFIXO + "PROFISSIONAL";
+        }
+
+        return CPF_NAO_INFORMADO_PREFIXO + nome.trim();
+    }
+
     protected String gerarResumoProfissional() {
         return "Nome: " + nome
                 + " | Espec: " + especialidade
@@ -141,9 +176,11 @@ public class Profissional extends Pessoa {
                 + " | Valor: R$" + valorConsulta;
     }
 
-    // SOBRESCRITA: Profissional redefine o comportamento abstrato herdado de Pessoa.
-    @Override
-    public String exibirResumo() {
+    private String obterDiasFormatados() {
+        if (totalDias == 0) {
+            return "Nenhum";
+        }
+
         String dias = "";
 
         for (int i = 0; i < totalDias; i++) {
@@ -154,6 +191,12 @@ public class Profissional extends Pessoa {
             dias = dias + diasDisponiveis[i];
         }
 
-        return gerarResumoProfissional() + " | Dias: " + dias;
+        return dias;
+    }
+
+    // SOBRESCRITA: Profissional redefine o comportamento abstrato herdado de Pessoa.
+    @Override
+    public String exibirResumo() {
+        return gerarResumoProfissional() + " | Dias: " + obterDiasFormatados();
     }
 }
